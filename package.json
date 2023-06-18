@@ -1,6 +1,6 @@
 {
   "name": "headless-sqs",
-  "version": "0.1.0-alpha.2",
+  "version": "0.1.0-alpha.3",
   "description": "Headless SQS package creates queues if do not exist with a sample configuration.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
