@@ -4,6 +4,8 @@ export type ProducerOptions = {
   sendMessageCommandInput: SendMessageCommandInput
 } & QueueOptions
 
+export type ConsumerOptions = { queueName: string } & QueueOptions
+
 export type QueueOptions = {
   isFifo?: boolean
   createIfNotExists?: boolean
