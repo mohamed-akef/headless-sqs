@@ -18,7 +18,7 @@ describe('Consumer', () => {
 
   it('should consume messages', async () => {
     const options: ConsumerOptions = {
-      queueName: 'consumer',
+      baseConsumerOptions: { queueUrl: 'consumer' },
       isFifo: true,
       createIfNotExists: true,
       enableDlq: true,

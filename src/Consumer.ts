@@ -31,14 +31,25 @@ export class Consumer {
     handler: (message: Message) => Promise<void>,
   ): Promise<bbcConsumer> {
     const sqsQueueName = options?.isFifo
-      ? generateFifoQueueName(options.queueName)
-      : options.queueName
+      ? generateFifoQueueName(options.baseConsumerOptions.queueUrl)
+      : options.baseConsumerOptions.queueUrl
     const getQueueUrl = new GetQueueUrl(this.client)
     const queueUrl = await getQueueUrl.execute(sqsQueueName, options)
-    return bbcConsumer.create({
+    const consumer = bbcConsumer.create({
+      ...options?.baseConsumerOptions,
       queueUrl: queueUrl,
-      handleMessage: handler,
+      handleMessageBatch: async messages => {
+        await Promise.all(messages.map(handler))
+      },
       sqs: this.client,
     })
+    consumer.on('error', err => {
+      console.error('Error:', err.message)
+    })
+    consumer.on('processing_error', err => {
+      console.error('Processing error:', err.message)
+    })
+
+    return consumer
   }
 }
