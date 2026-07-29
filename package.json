@@ -1,39 +1,86 @@
 {
   "name": "headless-sqs",
-  "version": "0.1.0-alpha.4",
-  "description": "Headless SQS package creates queues if do not exist with a sample configuration.",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "engines": {
-    "node": ">=16.0.0"
-  },
-  "scripts": {
-    "build": "npm run clean && tsc",
-    "clean": "rm -fr dist/*"
-  },
+  "version": "0.2.0",
+  "description": "Type-safe SQS producer and consumer that provisions queues (and their dead-letter queues) from declarative config, with per-message acknowledgement and FIFO-aware ordering.",
+  "keywords": [
+    "sqs",
+    "aws",
+    "queue",
+    "fifo",
+    "producer",
+    "consumer",
+    "dead-letter-queue",
+    "dlq",
+    "message-queue",
+    "typescript"
+  ],
+  "license": "Apache-2.0",
+  "author": "Mohamed Akef",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/mohamed-akef/headless-sqs.git"
   },
-  "keywords": [
-    "sqs",
-    "queue",
-    "producer"
-  ],
-  "author": "Mohamed Akef",
-  "license": "Apache-2.0",
   "bugs": {
     "url": "https://github.com/mohamed-akef/headless-sqs/issues"
   },
   "homepage": "https://github.com/mohamed-akef/headless-sqs#readme",
-  "devDependencies": {
-    "@types/jest": "^29.5.2",
-    "prettier": "^2.8.8",
-    "ts-jest": "^29.1.0",
-    "typescript": "^5.1.3"
+  "type": "commonjs",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    },
+    "./package.json": "./package.json"
+  },
+  "sideEffects": false,
+  "files": [
+    "dist",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "scripts": {
+    "build": "tsup",
+    "clean": "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true})\"",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "check": "npm run format:check && npm run lint && npm run typecheck && npm run test:coverage && npm run build",
+    "prepublishOnly": "npm run check"
+  },
+  "peerDependencies": {
+    "@aws-sdk/client-sqs": "^3.1072.0"
   },
   "dependencies": {
-    "@aws-sdk/client-sqs": "^3.354.0",
-    "sqs-consumer": "^7.1.0"
+    "sqs-consumer": "^15.0.3"
+  },
+  "devDependencies": {
+    "@aws-sdk/client-sqs": "3.1098.0",
+    "@types/node": "22.20.2",
+    "@vitest/coverage-v8": "4.1.10",
+    "aws-sdk-client-mock": "4.1.0",
+    "eslint": "10.8.0",
+    "prettier": "3.9.6",
+    "tsup": "8.5.1",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.65.0",
+    "vitest": "4.1.10"
   }
 }
