@@ -113,6 +113,9 @@ alpha, so no compatibility layer is provided.
   short polling bills more requests and adds latency for no benefit.
 - `sqs-consumer` upgraded from `^7.1.0` to `^15.0.3`; its options are now exposed
   through this package's own types instead of a `baseConsumerOptions` passthrough.
+  Following that upgrade, `attributeNames` means _queue_ attributes and the new
+  `messageSystemAttributeNames` carries per-message system attributes such as
+  `MessageGroupId` — the two were a single field in v7.
 - The published tarball is now defined by an explicit `files` allowlist. It
   previously depended on npm's `.gitignore` fallback and shipped `src/`, `test/`,
   `tsconfig.json` and `jest.config.js`.

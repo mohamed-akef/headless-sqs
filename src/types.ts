@@ -1,5 +1,7 @@
 import type {
   Message,
+  MessageSystemAttributeName,
+  QueueAttributeName,
   SendMessageCommandInput,
   SQSClient,
   SQSClientConfig,
@@ -317,14 +319,22 @@ export interface ConsumerConfig extends BaseConfig {
   shouldDeleteMessages?: boolean
 
   /**
-   * Queue attributes to fetch with each message.
+   * Queue attributes to fetch alongside each receive.
+   *
+   * For per-message system attributes such as `ApproximateReceiveCount`, use
+   * {@link messageSystemAttributeNames} instead.
+   */
+  attributeNames?: QueueAttributeName[]
+
+  /**
+   * Message system attributes to fetch with each message.
    *
    * `MessageGroupId` is requested automatically for FIFO queues, since it is
    * what makes per-group ordering possible.
    */
-  attributeNames?: string[]
+  messageSystemAttributeNames?: MessageSystemAttributeName[]
 
-  /** Message attributes to fetch with each message. */
+  /** User-defined message attributes to fetch with each message. */
   messageAttributeNames?: string[]
 
   /** Milliseconds to back off after an authentication failure. */

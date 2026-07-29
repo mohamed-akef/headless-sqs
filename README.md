@@ -297,21 +297,22 @@ Out-of-range values are rejected locally, with the field name and the accepted r
 
 ### Consumer
 
-| Option                       | Default       | Description                                                                                                  |
-| ---------------------------- | ------------- | ------------------------------------------------------------------------------------------------------------ |
-| `handler`                    | —             | Called per message.                                                                                          |
-| `batchSize`                  | `10`          | Messages per poll (1–10).                                                                                    |
-| `concurrency`                | `batchSize`   | Parallel handlers; parallel _groups_ on FIFO.                                                                |
-| `visibilityTimeout`          | queue default | Per-receive override.                                                                                        |
-| `waitTimeSeconds`            | `20`          | Long-poll duration.                                                                                          |
-| `pollingWaitTimeMs`          | `0`           | Pause between polls.                                                                                         |
-| `heartbeatInterval`          | —             | Extends visibility while handling; requires `visibilityTimeout`.                                             |
-| `handleMessageTimeout`       | —             | Milliseconds before a handler is timed out.                                                                  |
-| `terminateVisibilityTimeout` | `false`       | Make unhandled messages visible again at once, so failures retry without waiting out the visibility timeout. |
-| `shouldDeleteMessages`       | `true`        | Set `false` to delete messages yourself.                                                                     |
-| `attributeNames`             | `[]`          | Extra system attributes to fetch.                                                                            |
-| `messageAttributeNames`      | `[]`          | Message attributes to fetch.                                                                                 |
-| `authenticationErrorTimeout` | `10000`       | Backoff after an auth failure.                                                                               |
+| Option                        | Default       | Description                                                                                                                 |
+| ----------------------------- | ------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `handler`                     | —             | Called per message.                                                                                                         |
+| `batchSize`                   | `10`          | Messages per poll (1–10).                                                                                                   |
+| `concurrency`                 | `batchSize`   | Parallel handlers; parallel _groups_ on FIFO.                                                                               |
+| `visibilityTimeout`           | queue default | Per-receive override.                                                                                                       |
+| `waitTimeSeconds`             | `20`          | Long-poll duration.                                                                                                         |
+| `pollingWaitTimeMs`           | `0`           | Pause between polls.                                                                                                        |
+| `heartbeatInterval`           | —             | Extends visibility while handling; requires `visibilityTimeout`.                                                            |
+| `handleMessageTimeout`        | —             | Milliseconds before a handler is timed out.                                                                                 |
+| `terminateVisibilityTimeout`  | `false`       | Make unhandled messages visible again at once, so failures retry without waiting out the visibility timeout.                |
+| `shouldDeleteMessages`        | `true`        | Set `false` to delete messages yourself.                                                                                    |
+| `attributeNames`              | `[]`          | Queue attributes to fetch alongside each receive.                                                                           |
+| `messageSystemAttributeNames` | `[]`          | Message system attributes to fetch, e.g. `ApproximateReceiveCount`. `MessageGroupId` is added automatically on FIFO queues. |
+| `messageAttributeNames`       | `[]`          | Message attributes to fetch.                                                                                                |
+| `authenticationErrorTimeout`  | `10000`       | Backoff after an auth failure.                                                                                              |
 
 ## Logging
 

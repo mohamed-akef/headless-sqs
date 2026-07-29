@@ -1,4 +1,8 @@
-import type { Message, SQSClient } from '@aws-sdk/client-sqs'
+import type {
+  Message,
+  MessageSystemAttributeName,
+  SQSClient,
+} from '@aws-sdk/client-sqs'
 import {
   ChangeMessageVisibilityBatchCommand,
   SQSClient as SqsClientCtor,
@@ -20,7 +24,7 @@ const MAX_BATCH_SIZE = 10
 const DEFAULT_BATCH_SIZE = 10
 
 /** Attribute needed to group FIFO messages for ordered processing. */
-const MESSAGE_GROUP_ID_ATTRIBUTE = 'MessageGroupId'
+const MESSAGE_GROUP_ID_ATTRIBUTE: MessageSystemAttributeName = 'MessageGroupId'
 
 /** Options accepted by {@link Consumer.stop}. */
 export interface StopOptions {
@@ -149,7 +153,7 @@ export class Consumer extends EventEmitter<ConsumerEvents> {
 
   /** Whether the underlying poller is currently polling. */
   get isRunning(): boolean {
-    return this.poller?.isRunning ?? false
+    return this.poller?.status.isRunning ?? false
   }
 
   /**
@@ -202,7 +206,7 @@ export class Consumer extends EventEmitter<ConsumerEvents> {
     if (active === undefined) {
       return
     }
-    if (!active.isRunning) {
+    if (!active.status.isRunning) {
       this.poller = undefined
       return
     }
@@ -268,8 +272,11 @@ export class Consumer extends EventEmitter<ConsumerEvents> {
       queueUrl: queue.url,
       sqs: this.client,
       batchSize: this.batchSize,
-      attributeNames: this.resolveAttributeNames(queue),
+      messageSystemAttributeNames: this.resolveSystemAttributeNames(queue),
       handleMessageBatch: messages => this.processBatch(messages, queue),
+      ...(config.attributeNames !== undefined
+        ? { attributeNames: config.attributeNames }
+        : {}),
       ...(config.messageAttributeNames !== undefined
         ? { messageAttributeNames: config.messageAttributeNames }
         : {}),
@@ -304,15 +311,19 @@ export class Consumer extends EventEmitter<ConsumerEvents> {
    * FIFO queues always request `MessageGroupId`: without it messages cannot be
    * grouped, and processing falls back to serialising the entire batch.
    */
-  private resolveAttributeNames(queue: ResolvedQueue): string[] {
-    const configured = this.config.attributeNames ?? []
+  private resolveSystemAttributeNames(
+    queue: ResolvedQueue,
+  ): MessageSystemAttributeName[] {
+    const configured = this.config.messageSystemAttributeNames ?? []
     if (!queue.fifo) {
       return [...configured]
     }
 
-    const needsGroupId =
-      !configured.includes(MESSAGE_GROUP_ID_ATTRIBUTE) && !configured.includes('All')
-    return needsGroupId ? [...configured, MESSAGE_GROUP_ID_ATTRIBUTE] : [...configured]
+    const alreadyRequested =
+      configured.includes(MESSAGE_GROUP_ID_ATTRIBUTE) || configured.includes('All')
+    return alreadyRequested
+      ? [...configured]
+      : [...configured, MESSAGE_GROUP_ID_ATTRIBUTE]
   }
 
   /**
@@ -408,7 +419,7 @@ export class Consumer extends EventEmitter<ConsumerEvents> {
   private forwardEvents(poller: SqsConsumer): void {
     poller.on('error', (error, context) => {
       this.logger.error('sqs error', { error: error.message })
-      this.safeEmit('error', error, context as Message | Message[] | undefined)
+      this.safeEmit('error', error, context)
     })
     poller.on('timeout_error', (error, message) => {
       this.logger.error('handler timed out', { messageId: message.MessageId })

@@ -423,7 +423,7 @@ describe('Consumer — FIFO queues', () => {
     })
 
     const input = sqs.commandCalls(ReceiveMessageCommand)[0]!.args[0].input
-    expect(input.AttributeNames).toContain('MessageGroupId')
+    expect(input.MessageSystemAttributeNames).toContain('MessageGroupId')
   })
 
   it('does not request MessageGroupId for a standard queue', async () => {
@@ -435,7 +435,7 @@ describe('Consumer — FIFO queues', () => {
     })
 
     const input = sqs.commandCalls(ReceiveMessageCommand)[0]!.args[0].input
-    expect(input.AttributeNames ?? []).not.toContain('MessageGroupId')
+    expect(input.MessageSystemAttributeNames ?? []).not.toContain('MessageGroupId')
   })
 
   it('keeps a failing group from blocking another group', async () => {
