@@ -304,7 +304,13 @@ export interface ConsumerConfig extends BaseConfig {
   /** Milliseconds before a handler is considered timed out. */
   handleMessageTimeout?: number
 
-  /** Reset visibility to 0 after a processing error so the message is retried at once. */
+  /**
+   * Make unhandled messages visible again immediately, instead of after their
+   * visibility timeout, so a failure is retried without delay.
+   *
+   * Applies to messages whose handler failed and to messages skipped behind an
+   * earlier failure in the same FIFO message group.
+   */
   terminateVisibilityTimeout?: boolean
 
   /** Set to `false` to take over deleting messages yourself. Defaults to `true`. */

@@ -1,4 +1,5 @@
 import {
+  ChangeMessageVisibilityBatchCommand,
   DeleteMessageBatchCommand,
   GetQueueUrlCommand,
   ReceiveMessageCommand,
@@ -314,6 +315,96 @@ describe('Consumer — acknowledgement', () => {
     await subject.start()
     await new Promise(resolve => setTimeout(resolve, 40))
 
+    expect(subject.isRunning).toBe(true)
+  })
+})
+
+describe('Consumer — terminateVisibilityTimeout', () => {
+  beforeEach(() => {
+    sqs
+      .on(ReceiveMessageCommand)
+      .resolvesOnce({ Messages: [message('a'), message('b')] })
+      .resolves({ Messages: [] })
+    sqs.on(ChangeMessageVisibilityBatchCommand).resolves({ Successful: [], Failed: [] })
+  })
+
+  it('makes only the failed message visible again', async () => {
+    // sqs-consumer's own implementation only fires when the batch handler
+    // throws, which ours never does — so this has to be done here or the option
+    // would silently do nothing.
+    const subject = consumer({
+      terminateVisibilityTimeout: true,
+      handler: (received: Message) =>
+        received.MessageId === 'b'
+          ? Promise.reject(new Error('boom'))
+          : Promise.resolve(),
+    })
+    subject.on('processing_error', () => undefined)
+
+    await subject.start()
+    await vi.waitFor(() => {
+      expect(
+        sqs.commandCalls(ChangeMessageVisibilityBatchCommand).length,
+      ).toBeGreaterThan(0)
+    })
+
+    const input = sqs.commandCalls(ChangeMessageVisibilityBatchCommand)[0]!.args[0]
+      .input
+    expect(input.Entries).toHaveLength(1)
+    expect(input.Entries![0]!.ReceiptHandle).toBe('receipt-b')
+    expect(input.Entries![0]!.VisibilityTimeout).toBe(0)
+  })
+
+  it('does nothing when every message succeeds', async () => {
+    const subject = consumer({ terminateVisibilityTimeout: true })
+
+    await subject.start()
+    await vi.waitFor(() => {
+      expect(sqs.commandCalls(DeleteMessageBatchCommand).length).toBeGreaterThan(0)
+    })
+
+    expect(sqs.commandCalls(ChangeMessageVisibilityBatchCommand)).toHaveLength(0)
+  })
+
+  it('leaves visibility alone unless the option is set', async () => {
+    const subject = consumer({
+      handler: (received: Message) =>
+        received.MessageId === 'b'
+          ? Promise.reject(new Error('boom'))
+          : Promise.resolve(),
+    })
+    subject.on('processing_error', () => undefined)
+
+    await subject.start()
+    await vi.waitFor(() => {
+      expect(sqs.commandCalls(DeleteMessageBatchCommand).length).toBeGreaterThan(0)
+    })
+
+    expect(sqs.commandCalls(ChangeMessageVisibilityBatchCommand)).toHaveLength(0)
+  })
+
+  it('keeps processing when resetting visibility fails', async () => {
+    // A failed reset only delays the retry; it must not break the consumer.
+    sqs.on(ChangeMessageVisibilityBatchCommand).rejects(new Error('throttled'))
+
+    const subject = consumer({
+      terminateVisibilityTimeout: true,
+      handler: (received: Message) =>
+        received.MessageId === 'b'
+          ? Promise.reject(new Error('boom'))
+          : Promise.resolve(),
+    })
+    subject.on('processing_error', () => undefined)
+
+    await subject.start()
+    await vi.waitFor(() => {
+      expect(sqs.commandCalls(DeleteMessageBatchCommand).length).toBeGreaterThan(0)
+    })
+
+    // 'a' was still acknowledged despite the reset failing.
+    const entries = sqs.commandCalls(DeleteMessageBatchCommand)[0]!.args[0].input
+      .Entries!
+    expect(entries.map(entry => entry.ReceiptHandle)).toEqual(['receipt-a'])
     expect(subject.isRunning).toBe(true)
   })
 })

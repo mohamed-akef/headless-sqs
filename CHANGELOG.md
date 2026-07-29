@@ -86,12 +86,15 @@ alpha, so no compatibility layer is provided.
 - A clear error for `QueueDeletedRecently`, explaining SQS's 60-second window.
 - Automatic recovery when a cached queue URL becomes stale: the entry is dropped
   and the operation retried once.
+- `terminateVisibilityTimeout` resets visibility on failed and skipped messages
+  directly. Delegating it to `sqs-consumer` would have made it a no-op, because
+  that only triggers when the batch handler throws and ours deliberately does not.
 - Message validation before the call: non-empty body, 256 KiB size accounting
   including attributes, `groupId` required on FIFO queues, per-message delay
   rejected on FIFO queues, and unique batch entry ids.
 - Dual ESM and CommonJS builds with an `exports` map and separate type
   declarations for each.
-- 158 tests covering every fix above, ESLint with type-aware rules, and CI across
+- 162 tests covering every fix above, ESLint with type-aware rules, and CI across
   Node 22 and 24.
 
 ### Changed

@@ -1,0 +1,22 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      # Toolchain churn is noisy and low-risk; review it as one PR.
+      dev-dependencies:
+        dependency-type: development
+        update-types: [minor, patch]
+    ignore:
+      # Peer dependency: the floor is deliberately permissive so applications
+      # choose their own SDK version.
+      - dependency-name: '@aws-sdk/client-sqs'
+        update-types: [version-update:semver-minor, version-update:semver-patch]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly

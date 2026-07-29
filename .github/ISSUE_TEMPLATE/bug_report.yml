@@ -1,0 +1,64 @@
+name: Bug report
+description: Something behaves differently than documented
+labels: [bug]
+body:
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you expected, and what happened instead.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: >
+        The smallest configuration and code that shows the problem. Please
+        redact account ids and queue ARNs.
+      render: ts
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: headless-sqs version
+      placeholder: 0.2.0
+    validations:
+      required: true
+
+  - type: input
+    id: node-version
+    attributes:
+      label: Node.js version
+      placeholder: 22.20.0
+    validations:
+      required: true
+
+  - type: input
+    id: sdk-version
+    attributes:
+      label: '@aws-sdk/client-sqs version'
+      placeholder: 3.1098.0
+    validations:
+      required: true
+
+  - type: dropdown
+    id: queue-type
+    attributes:
+      label: Queue type
+      options:
+        - Standard
+        - FIFO
+        - Both / not sure
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Error output
+      description: The full error, including `error.code` and `error.cause` if present.
+      render: shell

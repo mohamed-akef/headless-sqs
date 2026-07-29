@@ -1,0 +1,28 @@
+name: Feature request
+description: Suggest a capability or an API change
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: >
+        What are you trying to do, and what makes it awkward today? Describe the
+        situation rather than the solution.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed API
+      description: How it would look in use, if you have a shape in mind.
+      render: ts
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Workarounds you have tried
+      description: >
+        Including whether dropping down to `@aws-sdk/client-sqs` directly is
+        enough for your case.

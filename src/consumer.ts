@@ -1,5 +1,8 @@
 import type { Message, SQSClient } from '@aws-sdk/client-sqs'
-import { SQSClient as SqsClientCtor } from '@aws-sdk/client-sqs'
+import {
+  ChangeMessageVisibilityBatchCommand,
+  SQSClient as SqsClientCtor,
+} from '@aws-sdk/client-sqs'
 import { EventEmitter } from 'node:events'
 import { Consumer as SqsConsumer, type ConsumerOptions } from 'sqs-consumer'
 import { IllegalStateError, InvalidQueueAttributeError } from './errors'
@@ -346,7 +349,60 @@ export class Consumer extends EventEmitter<ConsumerEvents> {
       )
     }
 
+    if (this.config.terminateVisibilityTimeout === true) {
+      await this.makeVisibleAgain(
+        [...outcome.failures.map(failure => failure.message), ...outcome.skipped],
+        queue,
+      )
+    }
+
     return outcome.successful
+  }
+
+  /**
+   * Drop the visibility timeout on messages that were not handled, so they are
+   * redelivered immediately instead of after the full timeout.
+   *
+   * Done here rather than delegated to `sqs-consumer`: its own
+   * `terminateVisibilityTimeout` only fires when the batch handler *throws*, and
+   * ours never does — it catches each failure so successful messages can still be
+   * acknowledged. Without this, the option would silently do nothing.
+   */
+  private async makeVisibleAgain(
+    messages: readonly Message[],
+    queue: ResolvedQueue,
+  ): Promise<void> {
+    const entries = messages.flatMap((message, index) =>
+      message.ReceiptHandle === undefined
+        ? []
+        : [
+            {
+              Id: `retry-${String(index)}`,
+              ReceiptHandle: message.ReceiptHandle,
+              VisibilityTimeout: 0,
+            },
+          ],
+    )
+
+    if (entries.length === 0) {
+      return
+    }
+
+    try {
+      await this.client.send(
+        new ChangeMessageVisibilityBatchCommand({
+          QueueUrl: queue.url,
+          Entries: entries,
+        }),
+      )
+    } catch (error) {
+      // Only the retry delay is affected — the messages are still in the queue
+      // and will reappear once their original timeout lapses.
+      this.logger.warn('could not reset visibility on unhandled messages', {
+        queue: queue.name,
+        error: toError(error).message,
+      })
+    }
   }
 
   private forwardEvents(poller: SqsConsumer): void {
