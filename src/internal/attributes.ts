@@ -112,8 +112,8 @@ export interface RedrivePolicyInput {
  *
  * - FIFO-only attributes (`FifoQueue`, `ContentBasedDeduplication`,
  *   `DeduplicationScope`, `FifoThroughputLimit`) are emitted **only** for FIFO
- *   queues. Sending them to a standard queue — including sending
- *   `FifoQueue: 'false'` — makes SQS reject the request.
+ *   queues; `DeduplicationScope` and `FifoThroughputLimit` in particular make
+ *   SQS reject the creation of a standard queue.
  * - `RedrivePolicy` is emitted only when a dead-letter target exists. An empty
  *   string is not a valid attribute value.
  * - Attributes the caller did not set are omitted so the AWS defaults apply,

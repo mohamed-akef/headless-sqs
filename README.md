@@ -26,7 +26,7 @@ Talking to SQS directly is not hard, but a handful of details bite almost everyo
 
 - **A failed message poisons its batch.** The obvious `handleMessageBatch` implementation acknowledges all-or-nothing, so one bad message out of ten redelivers the nine that already succeeded — and they get processed twice.
 - **FIFO ordering is per message group, not per queue.** Serialising the whole batch is correct but slow; processing it in parallel is fast but reorders messages.
-- **Standard and FIFO queues take different attributes.** Sending `FifoQueue: 'false'` or an empty `RedrivePolicy` makes `CreateQueue` fail.
+- **Standard and FIFO queues take different attributes.** `DeduplicationScope`, `FifoThroughputLimit` and an empty `RedrivePolicy` all make `CreateQueue` fail on a standard queue.
 - **`ContentBasedDeduplication` silently discards messages.** Two identical bodies within five minutes look exactly like message loss.
 - **Dead-letter queues need a two-step dance** — create the DLQ, read its ARN, then create the real queue with a redrive policy pointing at it.
 

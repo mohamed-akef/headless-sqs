@@ -13,9 +13,9 @@ describe('buildQueueAttributes — standard queues', () => {
     const attributes = buildQueueAttributes({ fifo: false })
 
     // Regression: the previous implementation always sent FifoQueue,
-    // ContentBasedDeduplication, DeduplicationScope and FifoThroughputLimit,
-    // which makes CreateQueue fail for a standard queue. Note that even
-    // `FifoQueue: 'false'` is not accepted.
+    // ContentBasedDeduplication, DeduplicationScope and FifoThroughputLimit.
+    // DeduplicationScope and FifoThroughputLimit are FIFO-only, so CreateQueue
+    // fails for a standard queue.
     expect(attributes).not.toHaveProperty('FifoQueue')
     expect(attributes).not.toHaveProperty('ContentBasedDeduplication')
     expect(attributes).not.toHaveProperty('DeduplicationScope')

@@ -15,9 +15,9 @@ alpha, so no compatibility layer is provided.
 
 - **Standard queues could not be created.** `CreateQueue` was always sent the
   FIFO-only attributes `FifoQueue`, `ContentBasedDeduplication`,
-  `DeduplicationScope` and `FifoThroughputLimit`. SQS rejects those on a standard
-  queue — including `FifoQueue: 'false'`. Attributes are now built conditionally
-  and FIFO-only keys are never sent for a standard queue.
+  `DeduplicationScope` and `FifoThroughputLimit`. `DeduplicationScope` and
+  `FifoThroughputLimit` are rejected outright on a standard queue. Attributes are
+  now built conditionally, so FIFO-only keys are never sent for a standard queue.
 - **`RedrivePolicy: ''` was always sent.** An empty string is not a valid
   attribute value, so creating a queue without a dead-letter queue passed SQS an
   invalid attribute. A redrive policy is now emitted only when a dead-letter

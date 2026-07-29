@@ -274,6 +274,15 @@ export class Consumer extends EventEmitter<ConsumerEvents> {
       batchSize: this.batchSize,
       messageSystemAttributeNames: this.resolveSystemAttributeNames(queue),
       handleMessageBatch: messages => this.processBatch(messages, queue),
+      // sqs-consumer warns that it does not guarantee FIFO behaviour. That
+      // caveat is about driving it directly: ordering here is handled by
+      // grouping on MessageGroupId before the handler ever runs, so the warning
+      // would be misleading noise — and this library logs nothing by default.
+      suppressFifoWarning: true,
+      // processBatch always returns an array, so the stricter contract already
+      // holds. Opting in now avoids a deprecation warning and matches what
+      // sqs-consumer intends to make the default.
+      strictReturn: true,
       ...(config.attributeNames !== undefined
         ? { attributeNames: config.attributeNames }
         : {}),
