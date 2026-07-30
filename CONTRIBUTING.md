@@ -61,6 +61,13 @@ When fixing a bug, add a test that fails without the fix. Several tests carry a 
 - Prefer failing early with a message naming the field and the accepted range over passing an invalid value to AWS.
 - Do not add a runtime dependency without a good reason. `@aws-sdk/client-sqs` stays a peer dependency so applications control the version.
 
+### Two pinned dev dependencies
+
+Both are pinned for a reason, and Dependabot is configured to leave their majors alone:
+
+- **`typescript` is held on 5.x.** Not a preference — `typescript-eslint` refuses TypeScript 7 at runtime (`typescript-eslint does not support TS 7.0`) and its newest release still declares `typescript: >=4.8.4 <6.1.0`, so there is nothing to upgrade to. TypeScript 7 compiles this codebase without error; only type-aware linting blocks it. When typescript-eslint gains support, bump both together and drop the ignore rule.
+- **`@types/node` is held on the 22.x line**, matching the `engines` floor. Types from a newer Node would let an API that does not exist on Node 22 typecheck. Raise it when the supported Node floor moves.
+
 ## Releasing
 
 Releases are automatic. The version in `package.json` is the trigger — there are no tags to cut by hand.
