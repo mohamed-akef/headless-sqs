@@ -63,18 +63,24 @@ When fixing a bug, add a test that fails without the fix. Several tests carry a 
 
 ## Releasing
 
+Releases are automatic. The version in `package.json` is the trigger — there are no tags to cut by hand.
+
 Maintainers only:
 
-1. Bump the version with `npm version <x.y.z> --no-git-tag-version`, so `package.json` and the lockfile stay in step.
+1. Bump the version: `npm version <x.y.z> --no-git-tag-version` (keeps `package.json` and the lockfile in step).
 2. Retitle the `CHANGELOG.md` entry from _Unreleased_ to the version and date.
-3. Merge to `main`.
-4. Tag `vX.Y.Z` and push it.
+3. Open a PR and merge it to `main`.
 
-The release workflow then verifies the tag matches `package.json`, runs the full check suite, and publishes.
+That is the whole process. On merge, the release workflow compares `package.json` against npm and, if that version is not published yet, runs the full check suite, publishes, then creates the tag and a GitHub release with the notes taken from the matching changelog section.
+
+Because **npm is the source of truth** for what has been released, the workflow is safe to re-run: a version already on npm is skipped rather than erroring, and a run that failed partway can simply be re-run. Publishing happens _before_ tagging, so a failed publish leaves no tag to clean up.
+
+### Publishing credentials
 
 Publishing uses [npm trusted publishing](https://docs.npmjs.com/trusted-publishers): the workflow exchanges a GitHub OIDC token for short-lived npm credentials, so there is **no npm token stored in this repository** — nothing to leak or rotate. Provenance attestations are generated automatically, which is why the publish step does not pass `--provenance`.
 
-Two consequences worth knowing before changing anything here:
+Three things worth knowing before changing any of this:
 
 - The trusted publisher on npm is bound to the **workflow filename**. Renaming `release.yml` breaks publishing until the npm configuration is updated to match.
-- Trusted publishing needs npm >= 11.5.1, which is newer than the npm bundled with Node. The workflow upgrades npm and then asserts the version, so a regression fails with a clear message instead of an opaque OIDC error.
+- Trusted publishing needs npm >= 11.5.1, which is newer than the npm bundled with Node. The workflow upgrades npm and asserts the version, so a regression fails with a clear message rather than an opaque authentication error.
+- If publishing fails with `404 Not Found - PUT`, npm has **no credentials** — it answers 404 rather than 403 so as not to reveal whether a package exists. It does not mean the package is missing. The workflow prints the exact trusted-publisher settings to fix it.
