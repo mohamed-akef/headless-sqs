@@ -136,4 +136,4 @@ not part of the public API.
 
 - Initial release: producer with queue auto-creation and optional dead-letter queue.
 
-[1.0.0]: https://github.com/mohamed-akef/headless-sqs/compare/v0.1.0-alpha.4...v1.0.0
+[1.0.0]: https://github.com/mohamed-akef/headless-sqs/releases/tag/v1.0.0
