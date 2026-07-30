@@ -1,24 +1,73 @@
 name: Release
 
+# Releases are driven by the version in package.json, not by hand-cut tags.
+#
+# Merge a version bump to main and this workflow publishes it, then creates the
+# matching git tag and GitHub release. Nothing else to remember, and no tag can
+# be pushed at the wrong commit.
+#
+# npm is the source of truth for "already released", so a run that failed partway
+# can simply be re-run: whatever did not make it to npm is retried, and anything
+# already published is skipped instead of erroring.
+
 on:
   push:
-    tags: ['v*']
+    branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: read
 
+concurrency:
+  group: release
+  cancel-in-progress: false
+
 jobs:
-  publish:
-    name: Publish to npm
+  decide:
+    name: Check whether this version needs releasing
     runs-on: ubuntu-latest
-    # Must match the environment configured on the npm trusted publisher, if one
-    # is set there. Add a required reviewer here for a manual gate before publish.
+    # Never publish from a fork.
+    if: github.repository == 'mohamed-akef/headless-sqs'
+    outputs:
+      version: ${{ steps.decide.outputs.version }}
+      should_release: ${{ steps.decide.outputs.should_release }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - id: decide
+        name: Compare package.json against what is on npm
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          name="$(node -p "require('./package.json').name")"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "Local version: $name@$version"
+
+          # `npm view` exits non-zero when the version does not exist, which is
+          # the signal we want rather than an error.
+          if npm view "$name@$version" version >/dev/null 2>&1; then
+            echo "should_release=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::$name@$version is already on npm — nothing to release."
+          else
+            echo "should_release=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::$name@$version is not on npm — releasing."
+          fi
+
+  release:
+    name: Publish ${{ needs.decide.outputs.version }}
+    needs: decide
+    if: needs.decide.outputs.should_release == 'true'
+    runs-on: ubuntu-latest
+    # Add a required reviewer here for a manual gate before anything publishes.
+    # Must match the environment on the npm trusted publisher, if one is set.
     environment: release
     permissions:
-      contents: read
+      # Needed to create the tag and the GitHub release.
+      contents: write
       # Trusted publishing exchanges this OIDC token for short-lived npm
-      # credentials, so no long-lived npm token is stored in this repository.
+      # credentials, so no long-lived npm token exists in this repository.
       id-token: write
+    env:
+      VERSION: ${{ needs.decide.outputs.version }}
     steps:
       - uses: actions/checkout@v7
 
@@ -29,8 +78,7 @@ jobs:
           cache: npm
           registry-url: https://registry.npmjs.org
 
-      # The npm bundled with Node is older than the first release that can
-      # exchange an OIDC token, so upgrade before publishing.
+      # The npm bundled with Node predates OIDC support.
       - name: Upgrade npm for trusted publishing
         run: npm install -g npm@latest
 
@@ -39,30 +87,86 @@ jobs:
           required=11.5.1
           actual="$(npm --version)"
           echo "npm $actual (need >= $required)"
-          # Sort both and check the lowest is the required version.
           if [ "$(printf '%s\n%s\n' "$required" "$actual" | sort -V | head -n1)" != "$required" ]; then
-            echo "npm $actual is too old for trusted publishing; need >= $required" >&2
+            echo "::error::npm $actual is too old for trusted publishing; need >= $required"
             exit 1
           fi
 
       - run: npm ci
 
-      - name: Verify the tag matches package.json
-        run: |
-          tag="${GITHUB_REF_NAME#v}"
-          pkg="$(node -p "require('./package.json').version")"
-          if [ "$tag" != "$pkg" ]; then
-            echo "Tag $tag does not match package.json version $pkg" >&2
-            exit 1
-          fi
-
-      # `prepublishOnly` runs this again; failing here makes the cause obvious
-      # before the publish step is reached.
       - name: Check
         run: npm run check
 
-      # No NODE_AUTH_TOKEN: credentials come from the OIDC exchange above.
-      # Provenance attestations are generated automatically when publishing via
-      # trusted publishing, so `--provenance` is not passed.
-      - name: Publish
-        run: npm publish --access public
+      # Published before tagging on purpose: a failed publish then leaves no tag
+      # behind, so re-running is clean rather than needing a tag deleted first.
+      - name: Publish to npm
+        run: |
+          if ! npm publish --access public; then
+            cat <<'HINT'
+          ::error::npm publish failed.
+
+          A "404 Not Found - PUT" above means npm had no credentials for this
+          workflow — npm returns 404 rather than 403 so it does not reveal
+          whether a package exists. It is not a missing package.
+
+          Fix it once, at https://www.npmjs.com/package/headless-sqs/access
+          under Trusted Publisher -> GitHub Actions:
+
+            Organization or user : mohamed-akef
+            Repository           : headless-sqs
+            Workflow filename    : release.yml      (filename only, no path)
+            Environment          : release
+            Allowed actions      : npm publish
+
+          The workflow filename must match exactly — the trusted publisher is
+          bound to it, so renaming this file breaks publishing. Configurations
+          created after 2026-05-20 must select an allowed action explicitly.
+
+          Then re-run this workflow; it is safe to re-run, because anything
+          already on npm is skipped.
+          HINT
+            exit 1
+          fi
+
+      - name: Build release notes from the changelog
+        run: |
+          node -e "
+            const fs = require('fs');
+            const version = process.env.VERSION;
+            const lines = fs.readFileSync('CHANGELOG.md', 'utf8').split('\n');
+            const start = lines.findIndex(l => l.startsWith('## [' + version + ']'));
+            if (start === -1) {
+              fs.writeFileSync('RELEASE_NOTES.md', 'Release ' + version + '\n');
+              process.exit(0);
+            }
+            let end = lines.findIndex((l, i) => i > start && l.startsWith('## ['));
+            if (end === -1) end = lines.length;
+            fs.writeFileSync('RELEASE_NOTES.md', lines.slice(start + 1, end).join('\n').trim() + '\n');
+          "
+
+      # Creates the tag at this commit as a side effect, so the tag can never
+      # point somewhere that was not actually released.
+      - name: Create the tag and GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if gh release view "v$VERSION" >/dev/null 2>&1; then
+            echo "::notice::Release v$VERSION already exists; leaving it alone."
+          else
+            gh release create "v$VERSION" \
+              --target "$GITHUB_SHA" \
+              --title "v$VERSION" \
+              --notes-file RELEASE_NOTES.md \
+              --verify-tag=false
+          fi
+
+      - name: Summary
+        run: |
+          {
+            echo "### Released \`$VERSION\` :rocket:"
+            echo
+            echo "- npm: https://www.npmjs.com/package/headless-sqs/v/$VERSION"
+            echo "- Release: ${{ github.server_url }}/${{ github.repository }}/releases/tag/v$VERSION"
+            echo
+            echo "Verify provenance with \`npm audit signatures\` after installing."
+          } >> "$GITHUB_STEP_SUMMARY"
