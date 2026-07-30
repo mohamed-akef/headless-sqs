@@ -4,8 +4,8 @@
 
 | Version | Supported                             |
 | ------- | ------------------------------------- |
-| 0.2.x   | Yes                                   |
-| 0.1.x   | No — pre-release, superseded by 0.2.0 |
+| 1.x     | Yes                                   |
+| 0.1.x   | No — pre-release, superseded by 1.0.0 |
 
 ## Reporting a vulnerability
 
