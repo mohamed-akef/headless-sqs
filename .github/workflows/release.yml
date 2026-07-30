@@ -11,19 +11,39 @@ jobs:
   publish:
     name: Publish to npm
     runs-on: ubuntu-latest
+    # Must match the environment configured on the npm trusted publisher, if one
+    # is set there. Add a required reviewer here for a manual gate before publish.
     environment: release
     permissions:
       contents: read
-      # Required for npm provenance attestations.
+      # Trusted publishing exchanges this OIDC token for short-lived npm
+      # credentials, so no long-lived npm token is stored in this repository.
       id-token: write
     steps:
       - uses: actions/checkout@v7
 
       - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          # Trusted publishing requires Node >= 22.14.0.
+          node-version: 24
           cache: npm
           registry-url: https://registry.npmjs.org
+
+      # The npm bundled with Node is older than the first release that can
+      # exchange an OIDC token, so upgrade before publishing.
+      - name: Upgrade npm for trusted publishing
+        run: npm install -g npm@latest
+
+      - name: Verify npm supports trusted publishing
+        run: |
+          required=11.5.1
+          actual="$(npm --version)"
+          echo "npm $actual (need >= $required)"
+          # Sort both and check the lowest is the required version.
+          if [ "$(printf '%s\n%s\n' "$required" "$actual" | sort -V | head -n1)" != "$required" ]; then
+            echo "npm $actual is too old for trusted publishing; need >= $required" >&2
+            exit 1
+          fi
 
       - run: npm ci
 
@@ -36,12 +56,13 @@ jobs:
             exit 1
           fi
 
-      # `prepublishOnly` runs the full check suite again; this makes the failure
-      # obvious before we reach the publish step.
+      # `prepublishOnly` runs this again; failing here makes the cause obvious
+      # before the publish step is reached.
       - name: Check
         run: npm run check
 
+      # No NODE_AUTH_TOKEN: credentials come from the OIDC exchange above.
+      # Provenance attestations are generated automatically when publishing via
+      # trusted publishing, so `--provenance` is not passed.
       - name: Publish
-        run: npm publish --provenance --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --access public

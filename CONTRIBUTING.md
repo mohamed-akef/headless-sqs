@@ -65,6 +65,16 @@ When fixing a bug, add a test that fails without the fix. Several tests carry a 
 
 Maintainers only:
 
-1. Update `CHANGELOG.md` and bump the version in `package.json`.
-2. Merge to `main`.
-3. Tag `vX.Y.Z` and push it — the release workflow verifies the tag matches `package.json`, runs the full check suite, and publishes with npm provenance.
+1. Bump the version with `npm version <x.y.z> --no-git-tag-version`, so `package.json` and the lockfile stay in step.
+2. Retitle the `CHANGELOG.md` entry from _Unreleased_ to the version and date.
+3. Merge to `main`.
+4. Tag `vX.Y.Z` and push it.
+
+The release workflow then verifies the tag matches `package.json`, runs the full check suite, and publishes.
+
+Publishing uses [npm trusted publishing](https://docs.npmjs.com/trusted-publishers): the workflow exchanges a GitHub OIDC token for short-lived npm credentials, so there is **no npm token stored in this repository** — nothing to leak or rotate. Provenance attestations are generated automatically, which is why the publish step does not pass `--provenance`.
+
+Two consequences worth knowing before changing anything here:
+
+- The trusted publisher on npm is bound to the **workflow filename**. Renaming `release.yml` breaks publishing until the npm configuration is updated to match.
+- Trusted publishing needs npm >= 11.5.1, which is newer than the npm bundled with Node. The workflow upgrades npm and then asserts the version, so a regression fails with a clear message instead of an opaque OIDC error.
