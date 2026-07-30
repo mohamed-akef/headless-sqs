@@ -16,6 +16,22 @@ updates:
       - dependency-name: '@aws-sdk/client-sqs'
         update-types: [version-update:semver-minor, version-update:semver-patch]
 
+      # TypeScript majors are blocked upstream, not by choice. typescript-eslint
+      # refuses TS 7 at runtime ("typescript-eslint does not support TS 7.0"),
+      # and its newest release still declares `typescript: >=4.8.4 <6.1.0`, so
+      # there is no version to upgrade to. TS 7 compiles this codebase fine —
+      # only type-aware linting blocks it. Drop this entry once typescript-eslint
+      # ships TS 7 support, and bump both together.
+      - dependency-name: 'typescript'
+        update-types: [version-update:semver-major]
+
+      # @types/node is pinned to the 22.x line on purpose: it matches the
+      # `engines` floor of Node 22, so an API added in Node 24 or 26 cannot
+      # typecheck against a runtime that lacks it. Raise it deliberately when the
+      # supported Node floor moves, not automatically.
+      - dependency-name: '@types/node'
+        update-types: [version-update:semver-major]
+
   - package-ecosystem: github-actions
     directory: /
     schedule:
