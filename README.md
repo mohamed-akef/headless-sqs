@@ -42,6 +42,18 @@ npm install headless-sqs @aws-sdk/client-sqs
 
 Requires **Node.js 22 or newer**.
 
+## Stability
+
+`1.x` follows semantic versioning. Everything reachable from the package root — `Producer`, `Consumer`, the error classes, the logger and the exported types — is stable, and a breaking change to any of it requires a major release. Anything under `src/internal/` is implementation detail and may change in a patch.
+
+Node.js support tracks upstream: releases that have reached end of life may be dropped in a major version.
+
+Releases are published from CI using [npm trusted publishing](https://docs.npmjs.com/trusted-publishers), which attaches a provenance attestation automatically — no long-lived publish token exists for this package. You can verify that an installed copy was built from this repository:
+
+```sh
+npm audit signatures
+```
+
 ## Producing
 
 ```ts
