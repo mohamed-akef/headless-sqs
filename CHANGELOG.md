@@ -5,11 +5,15 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.2.0] - Unreleased
+## [1.0.0] - 2026-07-30
 
-A correctness-focused rewrite. The API changed shape — see
-[Migrating from 0.1.x](./README.md#migrating-from-01x). `0.1.x` was published as
-alpha, so no compatibility layer is provided.
+First stable release, and a correctness-focused rewrite. The API changed shape —
+see [Migrating from 0.1.x](./README.md#migrating-from-01x). `0.1.x` was published
+as alpha, so no compatibility layer is provided.
+
+From this release the exported surface follows semantic versioning: anything
+reachable from the package root is stable, and anything under `src/internal/` is
+not part of the public API.
 
 ### Fixed
 
@@ -132,4 +136,4 @@ alpha, so no compatibility layer is provided.
 
 - Initial release: producer with queue auto-creation and optional dead-letter queue.
 
-[0.2.0]: https://github.com/mohamed-akef/headless-sqs/compare/v0.1.0-alpha.4...HEAD
+[1.0.0]: https://github.com/mohamed-akef/headless-sqs/releases/tag/v1.0.0

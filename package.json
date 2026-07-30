@@ -1,6 +1,6 @@
 {
   "name": "headless-sqs",
-  "version": "0.2.0",
+  "version": "1.0.0",
   "description": "Type-safe SQS producer and consumer that provisions queues (and their dead-letter queues) from declarative config, with per-message acknowledgement and FIFO-aware ordering.",
   "keywords": [
     "sqs",

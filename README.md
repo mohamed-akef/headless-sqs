@@ -361,7 +361,7 @@ For an end-to-end check without AWS, point `clientConfig.endpoint` at [ElasticMQ
 
 ## Migrating from 0.1.x
 
-0.2.0 reshapes the API. The old surface passed a queue _name_ in the `QueueUrl` field and mutated your input object; the new one separates queue configuration from the message.
+1.0.0 reshapes the API. The old surface passed a queue _name_ in the `QueueUrl` field and mutated your input object; the new one separates queue configuration from the message.
 
 ```ts
 // 0.1.x
@@ -378,7 +378,7 @@ await producer.produce({
   maxReceiveCount: 5,
 })
 
-// 0.2.0
+// 1.0.0
 const producer = new Producer({
   clientConfig: { region: 'eu-west-1' },
   queue: {
@@ -391,7 +391,7 @@ const producer = new Producer({
 await producer.send({ body: 'hello', groupId: 'g1' })
 ```
 
-| 0.1.x                                    | 0.2.0                                                         |
+| 0.1.x                                    | 1.0.0                                                         |
 | ---------------------------------------- | ------------------------------------------------------------- |
 | `new Producer(sqsClientConfig)`          | `new Producer({ clientConfig, queue })`                       |
 | `producer.produce(options)`              | `producer.send(message)`                                      |
