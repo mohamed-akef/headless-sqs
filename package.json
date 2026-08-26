@@ -74,13 +74,13 @@
   "devDependencies": {
     "@aws-sdk/client-sqs": "3.1098.0",
     "@types/node": "22.20.1",
-    "@vitest/coverage-v8": "4.1.10",
+    "@vitest/coverage-v8": "4.1.11",
     "aws-sdk-client-mock": "4.1.0",
-    "eslint": "10.8.0",
+    "eslint": "10.9.0",
     "prettier": "3.9.6",
     "tsup": "8.5.1",
     "typescript": "5.9.3",
-    "typescript-eslint": "8.65.0",
-    "vitest": "4.1.10"
+    "typescript-eslint": "8.67.0",
+    "vitest": "4.1.11"
   }
 }
